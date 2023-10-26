@@ -1,14 +1,25 @@
-function IRAllAtOnce=AllAtOnce(first_cut, second_cut, TV)
+function IRAllAtOnce=AllAtOnce(first_cut, second_cut, choice)
 addpath(genpath(pwd))
 % path to data
 
 % load inv_sweep
 [inv_sweep, fs] = audioread('InvSineSweep_22_22k_1s_3sSilence_fadein_fadeout.wav');
-if TV
-    folder_path='\measures\Virtual_Room_Charaterization_AllAtOnceTV_20231019\-_AllAtOnce.wav';%present tv
-else
-    folder_path='\measures\Virtual_Room_CoverTV_NoHeadrest_AllAtOnceMeasureType_2_20231023\-_AllAtOnce.wav'; %no tv
+
+switch choice
+    case 1
+        disp('con TV');
+        folder_path='\measures\Virtual_Room_Charaterization_AllAtOnceTV_20231019\-_AllAtOnce.wav';
+    case 2
+        folder_path='\measures\Virtual_Room_CoverTV_NoHeadrest_AllAtOnceMeasureType_2_20231023\-_AllAtOnce.wav'; 
+        disp('covered TV');
+    case 3
+        folder_path=('\measures\Virtual_Room_NO_TV_NoHeadrest_AllAtOnceMeasureType_2_20231026\-_AllAtOnce.wav');
+        disp('no TV');
+    case 4
+        folder_path=('\measures\Virtual_Room_NO_TV_CoverDoor_NoHeadrest_AllAtOnceMeasureType_2_20231026\-_AllAtOnce.wav')
+        disp('no TV covered door');
 end
+
 
 [AllinOne, fs] = audioread(folder_path);
 
@@ -64,7 +75,7 @@ IR_fft=fft(IR_cut); %aggiorna fft from cut signal
 
 % salvataggio
 IRAllAtOnce=IR_cut;
-wholePath= 'ImpResp\AllAtOnceIR.wav';
+wholePath= 'IR\AllAtOnceIR.wav';
 audiowrite(wholePath, IR_cut, fs);
 
 end

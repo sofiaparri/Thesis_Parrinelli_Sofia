@@ -3,16 +3,30 @@ clear all;
 clc
 
 addpath(genpath(pwd))
-% path to data
-TV=false;
-if TV 
-    file_path='\measures\Virtual_Room_Charaterization_TV_20230929\'; %TV present
-else
-    file_path='\measures\Virtual_Room_CoverTV_NoHeadrestMeasureType_1_20231023\'; %no TV
+
+choice = input('Inserisci un codice: \n 1 con TV \n 2 con TV coperta \n 3 senza TV \n 4 senza TV e porta coperta \n: ');
+
+switch choice
+    case 1
+        disp('con TV');
+        file_path='\measures\Virtual_Room_Charaterization_TV_20230929\';
+    case 2
+        disp('covered TV');
+        file_path='\measures\Virtual_Room_CoverTV_NoHeadrestMeasureType_1_20231023\'; 
+    case 3
+        file_path='\measures\Virtual_Room_NO_TV_NoHeadrest_SingleSpeakersMeasureType_1_20231026\'; 
+        disp('no TV');
+    case 4
+        file_path='\measures\Virtual_Room_NO_TV_CoverDoor_NoHeadrest_SingleSpeakersMeasureType_1_20231026\'; 
+        disp('no TV cover door');
+    otherwise
+        disp('wrong option');
 end
 
+
+
 %saving folder
-folderPath = 'ImpResp'; 
+folderPath = 'IR'; 
 if ~isfolder(folderPath)
     mkdir(folderPath);
 end
@@ -72,8 +86,8 @@ figure;
 for i = 1:n_ls
     subplot(num_righe, num_colonne, i);
     sig_IR_fft=fft(audioread(fullfile(folderPath, ['IR ', int2str(i), '.wav'])));
-    margin = 0.05; %  margine tra i subplot 
-    padding = 0.001; %  spazio dai bordi 
+    margin = 0.06; %  margine tra i subplot 
+    padding = 0.003; %  spazio dai bordi 
     subaxis(num_righe, num_colonne, i, 'Spacing', margin, 'Padding', padding);
     % keep only meaningful frequencies
     NFFT = length(sig_IR_fft);
@@ -98,8 +112,9 @@ for i = 1:n_ls
     title(['LS ' num2str(i)]); 
     xlabel('Hz');
     xticks([ 100 200 500 1000 2000 4000]) ;
-    xticklabels({'100','200','500','1000','2000', '4000'});
+    xticklabels({'100','200','500','1k','2k', '4k'});
     xlim([30 20000]);
+    ylim([-10 10]);
 end
 
 %time
@@ -188,7 +203,7 @@ audiowrite(wholePath, IR_tot, fs);
 
 %% plot together
 %load IR in the case all ls play together
-IR_AllAtOnce=AllAtOnce(first_cut, second_cut, TV);
+IR_AllAtOnce=AllAtOnce(first_cut, second_cut, choice);
 IR_fftAllAtOnce= fft(IR_AllAtOnce);
 
 freqs= ((1:length(IR_tot_fft))'./length(IR_tot_fft)).*fs;
@@ -218,7 +233,7 @@ audiowrite(two_sig_path, two_signals, fs);
 
     % calculate parameters with given frequency range in 1/3 octave bands
        
-    raResults = ita_roomacoustics(RIR, 'freqRange', freqRange, 'bandsPerOctave', bandsPerOctave, 'PSNR_Lundeby', 'EDT', 'T20', 'C50','D50', 'PSNR_Lundeby', 'EDC' );
+    raResults = ita_roomacoustics(RIR, 'freqRange', freqRange, 'bandsPerOctave', bandsPerOctave, 'Intersection_Time_Lundeby', 'EDT', 'T20', 'C50','D50', 'PSNR_Lundeby', 'EDC', 'plotLundebyResults', true );
     % output is a struct with itaResults:
     raResults.EDT.channelNames = {'Octave bands'};
     raResults.T20.channelNames = {'Octave bands'};
