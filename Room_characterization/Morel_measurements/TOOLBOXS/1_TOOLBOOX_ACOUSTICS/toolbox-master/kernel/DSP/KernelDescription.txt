@@ -1,3 +1,0 @@
-Contact:           pdi
-Description:       simple and advanced signal processing functions
-Dependencies:      

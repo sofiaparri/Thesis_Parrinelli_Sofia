@@ -1,3 +1,0 @@
-Contact:           pdi
-Description:       Handle and manipulate meta data, e.g. channel names, etc.
-Dependencies:      

@@ -1,3 +1,0 @@
-Contact:           pdi
-Description:       Import/Export of Audio-Data
-Dependencies:      
