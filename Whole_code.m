@@ -235,7 +235,7 @@ end
 
 %% Room parameters
 
-   [rt,drr,cte, cte_mean, cfs,edt]=iosr.acoustics.irStats_toUse('sum_calibrated_whole.wav', 'graph', true, 'y_fit', [-5 -25], 'spec', 'full');
+   [rt,drr,cte, cte_mean, cfs,edt]=iosr.acoustics.irStats_toUse('IR_time.wav', 'graph', true, 'y_fit', [-5 -25], 'spec', 'full');
 
     figure();
     bar( rt);
@@ -325,35 +325,33 @@ end
     
     end
 %% SH in octave bands to plot
-   f = (0: size(A_effective_fft, 3))*fs/( size(A_effective_fft, 3)); 
-   f_band=[ 250, 1000, 4000];
-   f_band_lowLimit=f_band/sqrt(2);
-   f_band_upperLimit=f_band*sqrt(2);
-   A_octave_band=zeros(size(A_effective_fft, 1), size(A_effective_fft, 2), size(f_band, 2));
-
-    for band=1:length(f_band)
-         A_octave_band(:, :, band)= (sqrt(mean(abs(A_effective_fft(:, :, f>f_band_lowLimit(band) & f<=f_band_upperLimit(band))).^2, 3)));
-    end
+    f = (0: size(A_effective_fft, 3))*fs/( size(A_effective_fft, 3)); 
+    f_band=[ 250, 1000, 4000];
+    f_band_lowLimit=f_band/sqrt(2);
+    f_band_upperLimit=f_band*sqrt(2);
+    A_octave_band=zeros(size(A_effective_fft, 1), size(A_effective_fft, 2), size(f_band, 2));
+     for band=1:length(f_band)
+          A_octave_band(:, :, band)= (sqrt(mean(abs(A_effective_fft(:, :, f>f_band_lowLimit(band) & f<=f_band_upperLimit(band))).^2, 3)));
+     end
     v=  1;         % spherical harmonic to plot
- 
-
-     Plot_SH_polarPattern(A_octave_band, dirs, v);
-
+    
+    Plot_SH_polarPattern(A_octave_band, dirs, v);
+    
 %% Ambi Assessment 
 
-colors=[0.01 0.36 0.6; 0.22 0.61 0.77; 0.72 0.27 1.0; 0.47 0.67 0.19; 0.94 0.38 0.14; 0.93 0.69 0.13; 0.91 0.91 0.06];
-f = (0: size(A_effective_fft, 3))*fs/( size(A_effective_fft, 3)); 
- 
+    colors=[0.01 0.36 0.6; 0.22 0.61 0.77; 0.72 0.27 1.0; 0.47 0.67 0.19; 0.94 0.38 0.14; 0.93 0.69 0.13; 0.91 0.91 0.06];
+    f = (0: size(A_effective_fft, 3))*fs/( size(A_effective_fft, 3)); 
+     
 % Load Y ideal = Y_N  
-    [vecs_order(:,1), vecs_order(:,2), vecs_order(:,3)]=sph2cart(dirs(:,1), dirs(:,2), 1);
+        [vecs_order(:,1), vecs_order(:,2), vecs_order(:,3)]=sph2cart(dirs(:,1), dirs(:,2), 1);
+        
+        dirs_real=[dirs(:,1),  pi/2-dirs(:,2)];
+        
+        Y_N = getSH(6, dirs_real, 'complex');
     
-    dirs_real=[dirs(:,1),  pi/2-dirs(:,2)];
+    A_rescaled = A_effective_fft./max(abs(A_effective_fft), [], 'all');
+    Y_rescaled = Y_N./max(abs(Y_N),[], 'all');
     
-    Y_N = getSH(6, dirs_real, 'complex');
-
-A_rescaled = A_effective_fft./max(abs(A_effective_fft), [], 'all');
-Y_rescaled = Y_N./max(abs(Y_N),[], 'all');
-
 % Spatial Correlation
     
 
@@ -362,10 +360,10 @@ Y_rescaled = Y_N./max(abs(Y_N),[], 'all');
     f = (0:filter_size_second-1)*fs/(filter_size_second); 
 
     %fq=10;
-   %sample= floor(fq/size(A_effective_fft, 3));
-   plot(real(Y_rescaled(:, 1)))
-   hold on 
-   plot(squeeze(real(A_rescaled(:, 1, 1000))))
+    %sample= floor(fq/size(A_effective_fft, 3));
+    plot(real(Y_rescaled(:, 1)))
+      hold on 
+     plot(squeeze(real(A_rescaled(:, 1, 1000))))
     
     plot(real(Y_rescaled(:, 5)))
     hold on 
@@ -434,117 +432,121 @@ Y_rescaled = Y_N./max(abs(Y_N),[], 'all');
 %% Level Difference
 
 
-A_rescaled = A_effective_fft./max(abs(A_effective_fft), [], 'all');
-Y_rescaled = Y_N./max(abs(Y_N),[], 'all');
+    A_rescaled = A_effective_fft./max(abs(A_effective_fft), [], 'all');
+    Y_rescaled = Y_N./max(abs(Y_N),[], 'all');
 
- ld_v=zeros(n_sh, filter_size_second);
- for h=1:n_sh
+    ld_v=zeros(n_sh, filter_size_second);
+    for h=1:n_sh
+        for fr=1:filter_size_second
+            summation=0;
+            num=0;
+            den=0;
+     
+            for i=1:n_sp
+    
+                num=(abs(Y_rescaled(i,h ))).^2;          
+                den=A_rescaled(i, h, fr).*conj(A_rescaled(i, h, fr));
+               
+                summation=summation+num./den;
+    
+            end
+            ld_v(h, fr)= 1/n_sp.*summation;
+        end
+    end
+     ld_n=zeros(order-1, filter_size_second);
      for fr=1:filter_size_second
-         summation=0;
-         num=0;
-         den=0;
-  
-         for i=1:n_sp
-
-             num=(abs(Y_rescaled(i,h ))).^2;          
-             den=A_rescaled(i, h, fr).*conj(A_rescaled(i, h, fr));
-            
-             summation=summation+num./den;
- 
-         end
-         ld_v(h, fr)= 1/n_sp.*summation;
-     end
- end
- ld_n=zeros(order-1, filter_size_second);
- for fr=1:filter_size_second
-     last=0; 
-     for n=0:order
-         
-         center=n+1;       
-         summation=0;
-         for v=last+center-n:last+center+n  
+         last=0; 
+         for n=0:order
              
-            summation=summation+abs(ld_v(v, fr));
+             center=n+1;       
+             summation=0;
+             for v=last+center-n:last+center+n  
+                 
+                summation=summation+abs(ld_v(v, fr));
+             end
+             last=v;
+             ld_n(n+1, fr)=-10.*log((1/(2*n+1)).*summation);
          end
-         last=v;
-         ld_n(n+1, fr)=-10.*log((1/(2*n+1)).*summation);
      end
- end
- Noct = 5;
- figure;
- for i = 0:order
-     Z = smoothSpectrum(ld_n(i+1,:), f, Noct);
-     semilogx(f,Z, 'DisplayName', ['Order ' int2str(i)], 'Color', colors(i+1, :),  'LineWidth', 1);
-     hold on;
- end
- hold on
- for i = 1:length(frequenze_verticali)
-     if i > 2
-         xline(frequenze_verticali(i), 'k--', 'LineWidth', 1.5, 'DisplayName', ['Freq. cut order ' num2str((i-1))],  'Color',colors(i,:));   
-     else     
+     Noct = 5;
+     figure;
+     for i = 0:order
+         Z = smoothSpectrum(ld_n(i+1,:), f, Noct);
+         semilogx(f,Z, 'DisplayName', ['Order ' int2str(i)], 'Color', colors(i+1, :),  'LineWidth', 1);
+         hold on;
      end
- end
- xlim([80 20000]);
- xlabel('Frequency [Hz]');
- title('LD');
- xticks([20 30 50 100 200 500 1000 2000 4000 8000 16000]);
- xticklabels({'20', '30', '50', '100', '200', '500', '1000', '2000', '4000', '8000', '16000'});
- legend('show');
- ylabel('[dB]');
- grid on;
- ylim([ -100 0]);
+     hold on
+     for i = 1:length(frequenze_verticali)
+         if i > 2
+             xline(frequenze_verticali(i), 'k--', 'LineWidth', 1.5, 'DisplayName', ['Freq. cut order ' num2str((i-1))],  'Color',colors(i,:));   
+         else     
+         end
+     end
+     xlim([80 20000]);
+     xlabel('Frequency [Hz]');
+     title('LD');
+     xticks([20 30 50 100 200 500 1000 2000 4000 8000 16000]);
+     xticklabels({'20', '30', '50', '100', '200', '500', '1000', '2000', '4000', '8000', '16000'});
+     legend('show');
+     ylabel('[dB]');
+     grid on;
+     ylim([ -100 0]);
 
  %% Tuning: extract first order for each speaker singularly (omni) - delays
- peaks=zeros(n_sp, 1);
- fs=48000;
- %omni_component=zeros( 574148, 25);
- omni_component=zeros( 25, size(A_effective_fft, 3));
- folder_savings_omni='\TESI_POLIMI\Thesis_Parrinelli_Sofia\Saved_measures\IR_Central\IR_em_center_Nofilter';
- for i=1: n_sp
+    peaks=zeros(n_sp, 1);
+    fs=48000;
+    %omni_component=zeros( 574148, 25);
+    omni_component=zeros( 25, size(A_effective_fft, 3));
+    folder_savings_omni='\TESI_POLIMI\Thesis_Parrinelli_Sofia\Saved_measures\IR_Central\IR_em_center_Nofilter';
+    for i=1: n_sp
+    
+        omni_component(i, :)=squeeze(ifft(A_effective_fft(i, 1, :)));
+        %[omni_component(:, i), fs]=audioread(['Saved_measures\IR_Central\IR_pcb_central_Nofilter\IR', int2str(i),  '.wav']);
+        [pks,locs] = findpeaks(abs(omni_component(i, :)));
+        [~, direct_pos]=max(pks);
+        sample_peak=locs(direct_pos);
+        peaks(i)=sample_peak;
+        % save omni 
+        %audiowrite(fullfile(folder_savings_omni, ['IR', int2str(i), '.wav']), omni_component(i, :),  fs, 'BitsPerSample',32);
+    %"C:\Users\User\Desktop\TESI_POLIMI\Thesis_Parrinelli_Sofia\Saved_measures\IR_Central\IR_pcb_central_Nofilter\IR1.wav"
+    end 
+    %solo a sinistra
+    %peaks(3)=704;   % nella posizione a sinistra ci sono riflessioni alte, quindi prendo picco a mano
+    reference=max(peaks);
+    sample_difference=zeros(n_sp, 1);
  
-     omni_component(i, :)=squeeze(ifft(A_effective_fft(i, 1, :)));
-     %[omni_component(:, i), fs]=audioread(['Saved_measures\IR_Central\IR_pcb_central_Nofilter\IR', int2str(i),  '.wav']);
-     [pks,locs] = findpeaks(abs(omni_component(i, :)));
-     [~, direct_pos]=max(pks);
-     sample_peak=locs(direct_pos);
-     peaks(i)=sample_peak;
-     % save omni 
-     %audiowrite(fullfile(folder_savings_omni, ['IR', int2str(i), '.wav']), omni_component(i, :),  fs, 'BitsPerSample',32);
- %"C:\Users\User\Desktop\TESI_POLIMI\Thesis_Parrinelli_Sofia\Saved_measures\IR_Central\IR_pcb_central_Nofilter\IR1.wav"
- end 
- peaks(3)=704;   % nella posizione a sinistra ci sono riflessioni alte, quindi prendo picco a mano
- reference=max(peaks);
- sample_difference=zeros(n_sp, 1);
+ 
+    for i=1:n_sp
+         sample_difference(i)= reference-peaks(i);
+    end
  
  
- for i=1:n_sp
-     sample_difference(i)= reference-peaks(i);
- end
- 
-%figure();
-%plot(omni_component(sample_difference==0,:));
-%hold on
-%plot(omni_component(sample_difference==max(sample_difference), :));
+    figure()
+    plot(sample_difference, 'o');
+    hold on
+    yline(0);
+    ylabel('Samples');
+    xlabel('Speaker');
+    xticks([1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25  50 ]);
+    xticklabels({'1', '2','3','4','5','6', '7','8', '9','10','11','12','13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25',  'FontSize', 13});
+    
+    time_diff=sample_difference./fs;
+    
+    figure()
+    plot(time_diff, 'o');
+    hold on
+    yline(0);
+    ylabel('Time [s]');
+    xlabel('Speaker');
+    xticks([1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25  50 ]);
+    xticklabels({'1', '2','3','4','5','6', '7','8', '9','10','11','12','13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25',  'FontSize', 13});
 
- figure()
- plot(sample_difference, 'o');
- hold on
- yline(0);
- ylabel('Samples');
- xlabel('Speaker');
- xticks([1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25  50 ]);
- xticklabels({'1', '2','3','4','5','6', '7','8', '9','10','11','12','13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25',  'FontSize', 13});
- 
- time_diff=sample_difference./fs;
- 
- figure()
- plot(time_diff, 'o');
- hold on
- yline(0);
- ylabel('Time [s]');
- xlabel('Speaker');
- xticks([1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25  50 ]);
- xticklabels({'1', '2','3','4','5','6', '7','8', '9','10','11','12','13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25',  'FontSize', 13});
+
+
+
+
+
+
 
 
 
